@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101322">
+  <title>AI Study Buddy</title>
+  <style>
+    :root {
+      --bg: #08111e;
+      --glass: rgba(255, 255, 255, .075);
+      --glass-strong: rgba(255, 255, 255, .12);
+      --text: #f7f9ff;
+      --muted: #b3c1d5;
+      --accent: #a9c9ff;
+      --accent-2: #a7f3df;
+      --border: rgba(255, 255, 255, .19);
+      --danger: #ff9ba8;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; color: var(--text);
+      background:
+        radial-gradient(ellipse at 8% 12%, rgba(102, 135, 255, .32), transparent 38%),
+        radial-gradient(ellipse at 92% 18%, rgba(85, 225, 199, .22), transparent 35%),
+        radial-gradient(ellipse at 60% 100%, rgba(151, 111, 255, .19), transparent 40%),
+        linear-gradient(135deg, #07101d, #111b31 48%, #091521);
+      background-attachment: fixed;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+    }
+    button, textarea, select { font: inherit; }
+    .app { width: min(1120px, 100% - 32px); margin: 0 auto; padding: 28px 0 36px; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 28px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 48px; height: 48px; display: grid; place-items: center; border-radius: 17px;
+      background: linear-gradient(135deg, rgba(211, 227, 255, .92), rgba(137, 245, 219, .82));
+      color: #15243a; font-size: 25px; border: 1px solid rgba(255,255,255,.65);
+      box-shadow: 0 8px 32px rgba(147, 190, 255, .24), inset 0 1px 1px rgba(255,255,255,.8);
+    }
+    h1 { font-size: clamp(22px, 3vw, 30px); margin: 0; letter-spacing: -.7px; }
+    .subtitle { color: var(--muted); margin-top: 5px; font-size: 13px; }
+    .status {
+      display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px;
+      border: 1px solid var(--border); background: rgba(255,255,255,.075);
+      backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%);
+      color: var(--muted); border-radius: 999px; font-size: 12px; white-space: nowrap;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #f4c56a; }
+    .dot.online { background: var(--accent-2); box-shadow: 0 0 12px rgba(101,226,194,.8); }
+    .layout { display: grid; grid-template-columns: 280px minmax(0,1fr); gap: 20px; align-items: start; }
+    .panel {
+      position: relative; border: 1px solid var(--border);
+      background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.045) 48%, rgba(255,255,255,.075));
+      backdrop-filter: blur(28px) saturate(155%); -webkit-backdrop-filter: blur(28px) saturate(155%);
+      border-radius: 26px; box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.19);
+      overflow: hidden;
+    }
+    .panel::before {
+      content: ""; position: absolute; inset: 0 0 auto; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent); pointer-events: none;
+    }
+    aside { padding: 20px; }
+    .section-title { color: #e3ebff; font-size: 13px; font-weight: 750; margin: 0 0 13px; letter-spacing: .08em; }
+    .helper { color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .connect { display: flex; gap: 8px; margin: 14px 0 20px; }
+    select {
+      min-width: 0; width: 100%; color: var(--text); background: rgba(9,19,35,.58);
+      border: 1px solid var(--border); border-radius: 13px; padding: 11px;
+      outline: none;
+    }
+    select option { background: #142138; color: #fff; }
+    .primary, .secondary, .prompt {
+      border-radius: 14px; cursor: pointer; transition: transform .18s, background .18s, box-shadow .18s, opacity .18s;
+    }
+    button:hover { transform: translateY(-2px); }
+    button:disabled { opacity: .55; cursor: wait; transform: none; }
+    .primary {
+      border: 1px solid rgba(255,255,255,.48); padding: 11px 14px;
+      background: linear-gradient(135deg, rgba(208,226,255,.96), rgba(153,245,224,.92));
+      color: #122139; font-weight: 750; box-shadow: 0 8px 24px rgba(141,196,255,.17), inset 0 1px 0 rgba(255,255,255,.8);
+    }
+    .primary:hover { box-shadow: 0 12px 30px rgba(141,196,255,.27), inset 0 1px 0 rgba(255,255,255,.9); }
+    .secondary {
+      padding: 10px 12px; border: 1px solid var(--border); background: rgba(255,255,255,.075);
+      color: var(--text); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    }
+    .prompt-list { display: grid; gap: 9px; }
+    .prompt {
+      padding: 13px; text-align: left; color: #e7efff;
+      background: linear-gradient(135deg, rgba(255,255,255,.085), rgba(255,255,255,.035));
+      border: 1px solid rgba(255,255,255,.14); font-size: 12px; line-height: 1.45;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    .prompt:hover { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.28); }
+    .prompt span { display: block; color: var(--accent-2); font-size: 10px; letter-spacing: .12em; margin-bottom: 5px; }
+    .privacy { margin-top: 22px; padding-top: 17px; border-top: 1px solid rgba(255,255,255,.12); }
+    main { min-width: 0; }
+    .chat-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.025); }
+    .chat-title { font-weight: 750; }
+    .chat-subtitle { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    #messages { height: min(58vh, 570px); min-height: 360px; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 16px; scrollbar-color: rgba(255,255,255,.2) transparent; }
+    .welcome { margin: auto; max-width: 440px; text-align: center; padding: 22px 10px; }
+    .welcome-icon {
+      font-size: 40px; margin: 0 auto 15px; width: 76px; height: 76px; display: grid; place-items: center;
+      border-radius: 25px; background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.2);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 14px 40px rgba(0,0,0,.15);
+    }
+    .welcome h2 { font-size: 23px; margin: 0 0 9px; letter-spacing: -.5px; }
+    .welcome p { color: var(--muted); font-size: 14px; line-height: 1.7; margin: 0; }
+    .message { max-width: 88%; display: flex; gap: 10px; align-items: flex-start; }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .avatar {
+      flex: 0 0 32px; width: 32px; height: 32px; border-radius: 12px; display: grid; place-items: center;
+      background: rgba(195,215,255,.13); border: 1px solid rgba(255,255,255,.17); font-size: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+    .message.user .avatar { background: rgba(185,164,255,.18); }
+    .bubble {
+      white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid rgba(255,255,255,.15);
+      border-radius: 5px 18px 18px 18px; padding: 12px 15px;
+      background: linear-gradient(145deg, rgba(255,255,255,.105), rgba(255,255,255,.055));
+      color: #edf3ff; font-size: 14px; line-height: 1.7;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.07);
+    }
+    .message.user .bubble { border-radius: 18px 5px 18px 18px; background: linear-gradient(135deg, rgba(160,177,255,.22), rgba(178,160,255,.13)); }
+    .error { color: var(--danger); }
+    .composer { padding: 16px; border-top: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.025); }
+    .input-wrap {
+      display: flex; align-items: flex-end; gap: 10px; padding: 10px;
+      border: 1px solid rgba(255,255,255,.19); background: rgba(4,12,24,.36);
+      backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); border-radius: 19px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 8px 28px rgba(0,0,0,.12);
+    }
+    textarea { resize: vertical; min-height: 46px; max-height: 150px; flex: 1; border: 0; outline: 0; color: var(--text); background: transparent; padding: 12px 8px; line-height: 1.5; }
+    textarea::placeholder { color: #98a8c5; }
+    .footnote { color: #9aa9c4; text-align: center; font-size: 11px; margin-top: 10px; line-height: 1.5; }
+    .tiny { font-size: 11px; color: var(--muted); margin-top: 8px; }
+    @media (max-width: 760px) {
+      .app { width: min(100% - 20px, 600px); padding-top: 18px; }
+      header { align-items: flex-start; flex-direction: column; }
+      .layout { grid-template-columns: 1fr; }
+      aside { order: 2; }
+      #messages { height: 50vh; min-height: 330px; padding: 15px; }
+      .message { max-width: 96%; }
+    }
+    @media (prefers-reduced-transparency: reduce) {
+      .panel, .status, .secondary, .input-wrap { backdrop-filter: none; -webkit-backdrop-filter: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">✦</div>
+        <div>
+          <h1>AI Study Buddy</h1>
+          <div class="subtitle">Your friendly partner for learning, revision, and practice.</div>
+        </div>
+      </div>
+      <div class="status" id="status"><span class="dot" id="statusDot"></span><span id="statusText">Checking local AI…</span></div>
+    </header>
+
+    <div class="layout">
+      <aside class="panel">
+        <h2 class="section-title">YOUR STUDY SPACE</h2>
+        <p class="helper">Choose a local model, connect to Ollama, and ask questions in simple language.</p>
+        <label class="helper" for="model">AI model</label>
+        <div class="connect">
+          <select id="model" aria-label="AI model">
+            <option value="qwen2.5:1.5b">qwen2.5:1.5b</option>
+          </select>
+        </div>
+        <button class="primary" id="connectBtn" style="width:100%">Connect to Ollama</button>
+        <p class="tiny" id="connectHelp">Ollama must be running on this computer.</p>
+
+        <div style="margin-top:26px">
+          <h2 class="section-title">TRY ASKING</h2>
+          <div class="prompt-list">
+            <button class="prompt" data-prompt="Explain C# loops in simple English and show one short example."><span>01 · LEARN</span>Explain a topic simply</button>
+            <button class="prompt" data-prompt="Create 5 beginner-level quiz questions about C# object-oriented programming. Put the answers at the end."><span>02 · PRACTICE</span>Generate a quick quiz</button>
+            <button class="prompt" data-prompt="Make a simple 30-minute study plan for learning SQL SELECT queries."><span>03 · PLAN</span>Create a study plan</button>
+            <button class="prompt" data-prompt="Summarize the following topic into short revision notes with headings: "><span>04 · REVISE</span>Make revision notes</button>
+          </div>
+        </div>
+        <div class="privacy">
+          <h2 class="section-title">LOCAL AI</h2>
+          <p class="helper">Your prompts are sent to the Ollama service on your own computer. This demo does not send them to a cloud AI provider.</p>
+        </div>
+      </aside>
+
+      <main class="panel">
+        <div class="chat-head">
+          <div>
+            <div class="chat-title">Study chat</div>
+            <div class="chat-subtitle">Ask anything you are learning</div>
+          </div>
+          <button class="secondary" id="clearBtn">Clear chat</button>
+        </div>
+        <div id="messages" aria-live="polite">
+          <div class="welcome" id="welcome">
+            <div class="welcome-icon">📚</div>
+            <h2>What shall we learn today?</h2>
+            <p>Ask a question, turn a topic into revision notes, or practise with a quiz. Connect to Ollama to begin.</p>
+          </div>
+        </div>
+        <div class="composer">
+          <div class="input-wrap">
+            <textarea id="question" placeholder="Ask your Study Buddy a question…" rows="1" aria-label="Your question"></textarea>
+            <button class="primary" id="sendBtn">Send ↗</button>
+          </div>
+          <div class="footnote">AI can make mistakes. Check important answers against reliable learning materials.</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // This page expects Ollama's local API at http://localhost:11434.
+    // If the browser blocks access, we will configure Ollama's allowed origins
+    // or run this page through a small local backend in the next setup step.
+    const OLLAMA_URL = "http://localhost:11434";
+    const modelSelect = document.getElementById("model");
+    const statusText = document.getElementById("statusText");
+    const statusDot = document.getElementById("statusDot");
+    const connectBtn = document.getElementById("connectBtn");
+    const connectHelp = document.getElementById("connectHelp");
+    const messages = document.getElementById("messages");
+    const welcome = document.getElementById("welcome");
+    const questionInput = document.getElementById("question");
+    const sendBtn = document.getElementById("sendBtn");
+    let connected = false;
+    let busy = false;
+    const history = [];
+
+    function setStatus(text, online) {
+      statusText.textContent = text;
+      statusDot.classList.toggle("online", Boolean(online));
+    }
+
+    function removeWelcome() {
+      const current = document.getElementById("welcome");
+      if (current) current.remove();
+    }
+
+    function addMessage(role, text, extraClass = "") {
+      removeWelcome();
+      const row = document.createElement("div");
+      row.className = "message " + (role === "user" ? "user" : "assistant");
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = role === "user" ? "🙂" : "✦";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble " + extraClass;
+      bubble.textContent = text;
+      row.append(avatar, bubble);
+      messages.appendChild(row);
+      messages.scrollTop = messages.scrollHeight;
+      return bubble;
+    }
+
+    async function connectOllama() {
+      connectBtn.disabled = true;
+      setStatus("Connecting…", false);
+      try {
+        const response = await fetch(OLLAMA_URL + "/api/tags");
+        if (!response.ok) throw new Error("Ollama returned HTTP " + response.status);
+        const data = await response.json();
+        const available = (data.models || []).map(m => m.name);
+        const preferred = "qwen2.5:1.5b";
+        modelSelect.innerHTML = "";
+        if (available.length === 0) {
+          const option = document.createElement("option");
+          option.value = preferred;
+          option.textContent = preferred + " (not downloaded yet)";
+          modelSelect.appendChild(option);
+        } else {
+          available.forEach(name => {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            modelSelect.appendChild(option);
+          });
+          const match = available.find(n => n === preferred || n.startsWith(preferred + "-"));
+          if (match) modelSelect.value = match;
+        }
+        connected = true;
+        setStatus("Ollama connected", true);
+        connectBtn.textContent = "Connected ✓";
+        connectHelp.textContent = available.length
+          ? "Found " + available.length + " local model(s)."
+          : "Ollama is running, but no models were found.";
+      } catch (error) {
+        connected = false;
+        setStatus("Not connected", false);
+        connectBtn.textContent = "Try connecting again";
+        connectHelp.textContent = "Could not reach Ollama. Keep Ollama running and check the browser's connection permissions.";
+        addMessage("assistant", "I couldn't connect to Ollama from this page. Make sure Ollama is running. If the browser reports a CORS or network error, we'll configure the local connection next.", "error");
+      } finally {
+        connectBtn.disabled = false;
+      }
+    }
+
+    async function sendQuestion(prefill) {
+      const prompt = (typeof prefill === "string" ? prefill : questionInput.value).trim();
+      if (!prompt || busy) return;
+      questionInput.value = "";
+      addMessage("user", prompt);
+      history.push({ role: "user", content: prompt });
+      busy = true;
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Thinking…";
+      const answerBubble = addMessage("assistant", "Thinking…");
+      try {
+        if (!connected) await connectOllama();
+        if (!connected) throw new Error("Ollama is not connected yet.");
+        answerBubble.textContent = "";
+        const response = await fetch(OLLAMA_URL + "/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: modelSelect.value,
+            messages: [
+              { role: "system", content: "You are AI Study Buddy, a patient study helper. Explain topics in clear, simple language. Use examples and headings when helpful. For quizzes, put answers after the questions." },
+              ...history
+            ],
+            stream: true
+          })
+        });
+        if (!response.ok) throw new Error("Ollama returned HTTP " + response.status);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let fullAnswer = "";
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            const part = JSON.parse(line);
+            if (part.message && part.message.content) {
+              fullAnswer += part.message.content;
+              answerBubble.textContent = fullAnswer;
+              messages.scrollTop = messages.scrollHeight;
+            }
+          }
+        }
+        if (!fullAnswer) answerBubble.textContent = "I didn't receive a response. Please try again.";
+        else history.push({ role: "assistant", content: fullAnswer });
+      } catch (error) {
+        answerBubble.textContent = "Couldn't get an answer: " + error.message + "\n\nIf this mentions CORS or a network error, Ollama may need its local browser permissions configured. We can fix that in the next step.";
+        answerBubble.classList.add("error");
+        history.pop(); // remove the unanswered user message from conversation history
+      } finally {
+        busy = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send ↗";
+        questionInput.focus();
+      }
+    }
+
+    connectBtn.addEventListener("click", connectOllama);
+    sendBtn.addEventListener("click", () => sendQuestion());
+    questionInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendQuestion();
+      }
+    });
+    document.querySelectorAll("[data-prompt]").forEach(button => {
+      button.addEventListener("click", () => {
+        questionInput.value = button.dataset.prompt;
+        questionInput.focus();
+        if (!button.dataset.prompt.endsWith(": ")) sendQuestion(button.dataset.prompt);
+      });
+    });
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      history.length = 0;
+      messages.innerHTML = '<div class="welcome" id="welcome"><div class="welcome-icon">📚</div><h2>What shall we learn today?</h2><p>Ask a question, turn a topic into revision notes, or practise with a quiz. Connect to Ollama to begin.</p></div>';
+    });
+    // Do not auto-connect on load; user can press the button and see any browser permission error.
+  </script>
+</body>
+</html>
